@@ -1,8 +1,6 @@
 package com.amazon.ata.maps.partsdiscovery;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Helps expose key words from new editions of part catalogs.
@@ -17,7 +15,13 @@ public class DevicePartDiscovery {
      */
     public Map<String, Integer> calculateWordCounts(PartCatalog catalog) {
         // PARTICIPANTS: Implement calculateWordCounts()
-        return Collections.emptyMap();
+        Map<String, Integer> wordCounts = new HashMap<>();
+
+        for (String word : catalog.getCatalogWords()) {
+            wordCounts.merge(word, 1, (oldValue, defaultValue) -> oldValue + defaultValue);
+        }
+
+        return wordCounts;
     }
 
     // --- Part B ---
@@ -28,7 +32,7 @@ public class DevicePartDiscovery {
      */
     public void removeWord(String word, Map<String, Integer> wordCounts) {
         // PARTICIPANTS: Implement removeWord()
-        return;
+        wordCounts.remove(word);
     }
 
     // --- Part C ---
@@ -39,7 +43,18 @@ public class DevicePartDiscovery {
      */
     public String getMostFrequentWord(Map<String, Integer> wordCounts) {
         // PARTICIPANTS: Implement getMostFrequentWord()
-        return null;
+        String maxWord = "";
+        int maxCount = 0;
+
+        for (String word : wordCounts.keySet()) {
+            int count = wordCounts.get(word);
+            if (count > maxCount) {
+                maxWord = word;
+                maxCount = count;
+            }
+        }
+
+        return maxWord;
     }
 
     // --- Part D ---
@@ -53,7 +68,11 @@ public class DevicePartDiscovery {
      */
     public Map<String, Double> getTfIdfScores(Map<String, Integer> wordCounts, Map<String, Double> idfScores) {
         // PARTICIPANTS: Implement getTfIdfScores()
-        return Collections.emptyMap();
+        Map<String, Double> tfIdfScores = new HashMap<>();
+        for (String word : wordCounts.keySet()) {
+            tfIdfScores.put(word, wordCounts.get(word) * idfScores.get(word));
+        }
+        return tfIdfScores;
     }
 
     // --- Extension 1 ---
@@ -65,7 +84,26 @@ public class DevicePartDiscovery {
      */
     public List<String> getBestScoredWords(Map<String, Double> tfIdfScores) {
         // PARTICIPANTS: Implement getBestScoredWords()
-        return Collections.emptyList();
+//        return tfIdfScores.entrySet()
+//                .stream()
+//                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+//                .limit(10)
+//                .map(entry -> entry.getKey())
+//                .toList();
+
+        // This solution gets it down to O(n * log k) where k is x + 1 for the top x best scored words (k = 11)
+        Queue<Map.Entry<String, Double>> queue = new PriorityQueue<>(Map.Entry.comparingByValue());
+
+        for (var entry : tfIdfScores.entrySet()) {
+            queue.offer(entry);
+            if (queue.size() > 10) {
+                queue.poll();
+            }
+        }
+
+        return queue.stream()
+                .map(entry -> entry.getKey())
+                .toList();
     }
 
     // --- Extension 2 ---
@@ -79,7 +117,17 @@ public class DevicePartDiscovery {
      */
     public Map<String, Double> calculateIdfScores(List<Map<String,Integer>> catalogWordCounts) {
         // PARTICIPANTS: Implement getIdfScores()
-        return Collections.emptyMap();
+        Map<String, Double> idfMap = new HashMap<>();
+
+        for (var catalog : catalogWordCounts) {
+            for (String word : catalog.keySet()) {
+                idfMap.merge(word, 1.0, (currentValue, incrementValue) -> currentValue + incrementValue);
+            }
+        }
+
+        idfMap.replaceAll((k, v) -> Math.log10(catalogWordCounts.size() / v));
+
+        return idfMap;
     }
 
 }
